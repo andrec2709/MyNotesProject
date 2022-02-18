@@ -1,0 +1,178 @@
+#:import C kivy.utils.get_color_from_hex
+#:import Gradient kivy_gradient.Gradient
+
+<AddButton>:
+    canvas.before:
+        #Color:
+           # rgba: 25/255, 25/255, 25/255, .2
+        Color:
+            rgb: C("#3B3B3B")
+        Ellipse:
+            size: root.size[0] + dp(15), root.size[1] + dp(15)
+            pos: root.pos[0] - dp(7.5), root.pos[1] - dp(7.5)
+    source: "images/plus.png"
+    size: root.size
+    pos: root.pos
+
+
+<SearchButton>:
+    canvas.before:
+        Color:
+            rgb: C("#3B3B3B")
+        RoundedRectangle:
+            size: root.size[0] + dp(20), root.size[1] + dp(20)
+            pos: root.pos[0] - dp(10), root.pos[1] - dp(10)
+            radius: [16]
+    background_color: 0, 0, 0, 0
+    text: root.text
+    color: root.color
+    source: root.source
+
+<SettingsButton>:
+    canvas.before:
+        Color:
+            rgb: C("#3B3B3B")
+        RoundedRectangle:
+            size: root.size[0] + dp(20), root.size[1] + dp(20)
+            pos: root.pos[0] - dp(10), root.pos[1] - dp(10)
+            radius: [16]
+    background_color: 0, 0, 0, 0
+    text: root.text
+    color: root.color
+
+<SearchBar>:
+    size_hint_y: None
+    height: dp(40)
+    canvas.before:
+        Color:
+            rgb: C("#3B3B3B")
+        RoundedRectangle:
+            size: root.size[0], root.size[1]
+            pos: root.pos
+            radius: [20]
+    on_release: search_txt_input.focus = True
+    SearchInput:
+        id: search_txt_input
+        hint_text: "Search by the keyword..."
+        hint_text_color: C("#CCCCCC")
+        font_name: "fonts/Nunito-Light.ttf"
+        font_size: "16sp"
+        multiline: False
+        cursor_color: 1, 1, 1
+        foreground_color: C("#CCCCCC")
+        background_color: 0, 0, 0, 0
+        pos: root.pos[0], root.pos[1] + self.height/2 - dp(13)
+        size: root.size[0] - dp(30), self.minimum_height
+        padding: dp(20), 6, 6, 6
+
+
+
+
+<NotesLabel>:
+    font_name: "fonts/Nunito-Regular.ttf"
+    canvas.before:
+        Color:
+            rgb: 252/255, 186/255, 3/255
+        RoundedRectangle:
+            size: root.size
+            pos: root.pos
+    text: root.text
+    color: [0, 0, 0]
+    size_hint_y: None
+    text_size: self.width, None
+    height: self.texture_size[1]
+    padding: dp(10), dp(20)
+    on_release:
+        app.root.children[0].ids.close_button.close_search_bar(
+        app.root.children[0].ids.search_button,
+        app.root.children[0].ids.settings_button,
+        app.root.children[0].ids.text_notes,
+        app.root.children[0].ids.toolbar,
+        app.root.children[0],
+        app.root.children[0].ids.search_bar
+        )   # Before it changes to the screen note_editor, it closes the search bar
+
+        # Changing screen
+        app.root.current = "note_editor"
+
+
+<Main>:
+    id: main_page
+    BoxLayout:
+        id: wrap_box
+        padding: dp(10), dp(30)
+        orientation: "vertical"
+        BoxLayout:
+            padding: 0, 0, 0, dp(10)
+            id: toolbar
+            size_hint: 1, None
+            height: dp(60)
+
+            Label:
+                id: text_notes
+                text_size: self.size
+                size: self.texture_size
+               # valign: "center"
+                font_size: "30sp"
+                font_name: "fonts/Nunito-SemiBold.ttf"
+                text: "Notes"
+                color: app.color_text
+
+            FloatLayout:
+
+                SearchButton:
+                    id: search_button
+                    source: "images/magnify.png"
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    pos: toolbar.size[0] - self.size[0]*2 - dp(40) + wrap_box.padding[0], toolbar.pos[1] + toolbar.padding[3] + dp(10)
+                    on_release:
+                        self.test()
+                        self.call_search_bar(close_button, settings_button, text_notes, toolbar, main_page, search_bar)
+
+
+                SettingsButton:
+                    id: settings_button
+                    source: "images/cog.png"
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    pos: toolbar.size[0] - self.size[0] + wrap_box.padding[0] - dp(10), toolbar.pos[1] + toolbar.padding[3] + dp(10)
+                    on_press: print("SettingsButton")
+
+                SearchBar:
+                    id: search_bar
+                    opacity: 0
+                    size_hint_x: None
+                    #width: toolbar.width
+                    width: 0
+                    #pos: root.center_x - self.width/2.0, root.height - self.height/2.0 - toolbar.height + toolbar.padding[3]
+                    pos: root.center_x - self.width/2.0, root.height - self.height/2.0 - toolbar.height + toolbar.padding[3]
+                    CloseButton:
+                        id: close_button
+                        source: "images/close.png"
+                        size: dp(24), dp(24)
+                        pos: self.parent.pos[0] + self.parent.width - self.width - dp(10), self.parent.pos[1] + dp(9)
+                        on_release: self.close_search_bar(search_button, settings_button, text_notes, toolbar, main_page, search_bar)
+
+
+        ScrollView:
+            do_scroll_y: True
+            NotesList:
+                id: notes_list
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: "vertical"
+
+    FloatLayout:
+        AddButton:
+            size_hint: None, None
+            size: dp(35), dp(35)
+            #pos: wrap_box.size[0] - self.width - wrap_box.padding[0]*1.7, 80
+            pos: root.size[0] - self.width*2, 0 + self.height
+            on_release: print("add_button")
+
+<NoteEditor>:
+    Button:
+        text: "Hello!"
+
+        on_press: root.manager.current = "main"
