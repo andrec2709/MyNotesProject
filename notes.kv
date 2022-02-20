@@ -1,5 +1,4 @@
 #:import C kivy.utils.get_color_from_hex
-#:import Gradient kivy_gradient.Gradient
 
 <AddButton>:
     canvas.before:
@@ -22,7 +21,7 @@
         RoundedRectangle:
             size: root.size[0] + dp(20), root.size[1] + dp(20)
             pos: root.pos[0] - dp(10), root.pos[1] - dp(10)
-            radius: [16]
+            radius: [dp(16)]
     background_color: 0, 0, 0, 0
     text: root.text
     color: root.color
@@ -35,7 +34,7 @@
         RoundedRectangle:
             size: root.size[0] + dp(20), root.size[1] + dp(20)
             pos: root.pos[0] - dp(10), root.pos[1] - dp(10)
-            radius: [16]
+            radius: [dp(16)]
     background_color: 0, 0, 0, 0
     text: root.text
     color: root.color
@@ -49,7 +48,7 @@
         RoundedRectangle:
             size: root.size[0], root.size[1]
             pos: root.pos
-            radius: [20]
+            radius: [dp(20)]
     on_release: search_txt_input.focus = True
     SearchInput:
         id: search_txt_input
@@ -63,7 +62,7 @@
         background_color: 0, 0, 0, 0
         pos: root.pos[0], root.pos[1] + self.height/2 - dp(13)
         size: root.size[0] - dp(30), self.minimum_height
-        padding: dp(20), 6, 6, 6
+        padding: dp(20), dp(6), dp(6), dp(6)
 
 
 

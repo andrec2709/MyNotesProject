@@ -14,7 +14,7 @@ from kivy.uix.screenmanager import *
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 from kivy.utils import get_color_from_hex
-from kivymd.app import MDApp
+#from kivymd.app import MDApp
 
 Window.size = (260, 490)
 Window.minimum_width, Window.minimum_height = Window.size
