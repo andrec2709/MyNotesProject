@@ -166,16 +166,23 @@ class SearchInput(TextInput):
         super(SearchInput, self).__init__(**kwargs)
         self.app = App.get_running_app()
 
-    #def on_text(self, instance, value):
-        #self.app.root.children[0].ids.notes_list.search_notes(self)
-
     def on_text(self, instance, value):
+        """
+        Every time you type in something, it changes the RecycleView data.
+        """
         self.app.root.children[0].ids.rv.data = []
         for note in self.app.root.children[0].ids.rv.data_model.notes:
             if self.text.lower() in note[1].lower():
-                self.app.root.children[0].ids.rv.data.append({'text': note[1],
-                                                              'id_num': note[0],
-                                                              'body_txt': note[2]})
+                self.app.root.children[0].ids.rv.data.append({
+
+                    'text': note[1][:100] if len(note[1]) > 100 else note[1],
+                    'size_hint_y': None,
+                    'height': dp(90) if len(note[1]) < 100 else dp(120),
+                    'id_num': note[0],  # rowid
+                    'body_txt': note[2],
+                    'bg_color': [note[3], note[4], note[5], note[6]]
+
+                })
 
 
 class TitleInput(TextInput):
