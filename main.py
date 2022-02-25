@@ -6,10 +6,11 @@ from kivy.base import EventLoop
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.metrics import dp
-from kivy.properties import ListProperty, ColorProperty, DictProperty
+from kivy.properties import ListProperty, ColorProperty, DictProperty, StringProperty
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
@@ -25,6 +26,25 @@ from kivy.utils import get_color_from_hex
 #Window.size = (260, 490)
 #Window.minimum_width, Window.minimum_height = Window.size
 Window.softinput_mode = "below_target"
+
+
+class DarkModeDDMainButton(ButtonBehavior, Label):
+    txt = StringProperty("")
+
+    def __init__(self, **kwargs):
+        super(DarkModeDDMainButton, self).__init__(**kwargs)
+
+
+
+class DarkModeDD(DropDown):
+    def __init__(self, **kwargs):
+        super(DarkModeDD, self).__init__(**kwargs)
+        self.app = App.get_running_app()
+
+    def on_select(self, data):
+        self.app.back_color = data[0]
+        self.app.color_text = data[1]
+        self.app.color_text_hint = data[2]
 
 
 class SettingsPopup(ModalView):
@@ -98,7 +118,12 @@ class SettingsButton(ButtonBehavior, Image):
 
 
 class GoBackButton(ButtonBehavior, Image):
-    pass
+    def check_inputs(self, title, body, popup):
+        app = App.get_running_app()
+        if title.text != "":
+            popup.open()
+        else:
+            app.root.current = "main"
 
 
 class SaveButton(ButtonBehavior, Image):
@@ -201,6 +226,7 @@ class NotesLabel(RecycleDataViewBehavior, ButtonBehavior, Label):
 class StorageNotes(RecycleDataModel):
     notes = ListProperty()  # Stores tuples that represent notes == (ROWID, Title, Body Text, [r,g,b,a])
     default_bg_color = ColorProperty([0.6196, 1, 1, 1])
+
     def __init__(self, **kwargs):
         super(StorageNotes, self).__init__(**kwargs)
         self.recycleview = RV
@@ -228,11 +254,14 @@ class RV(RecycleView):
 
 
 class NotesApp(App):
-    color_text = ListProperty([1, 1, 1, 1])
+    color_text = ColorProperty([1, 1, 1, 1])
+    back_color = ColorProperty(get_color_from_hex("#252525"))
+    color_text_hint = ColorProperty(get_color_from_hex("#9A9A9A"))
+    setting_mode = StringProperty("Dark")
 
     def __init__(self, **kwargs):
         super(NotesApp, self).__init__(**kwargs)
-        Window.clearcolor = get_color_from_hex("#252525")
+        Window.clearcolor = self.back_color
 
     def build(self):
         sm = MyScreenManager(transition=SwapTransition())
@@ -247,6 +276,9 @@ class NotesApp(App):
         if key == 27 and self.root.current == "note_editor":
             self.root.current = "main"
             return True
+
+    def on_back_color(self, instance, value):
+        Window.clearcolor = self.back_color
 
 
 if __name__ == "__main__":

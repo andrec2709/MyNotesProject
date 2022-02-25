@@ -112,16 +112,101 @@
     foreground_color: 0, 0, 0, 0
     separator_height: dp(0)
     size_hint: (.9, .8) if Window.size == (320, 480) else (.9, .7)
-    BoxLayout:
-        orientation: "vertical"
-        padding: dp(40), 0
+    ScrollView:
+        do_scroll_y: True
         canvas.before:
             Color:
                 rgb: C("#252525")
             RoundedRectangle:
                 size: self.size
                 pos: self.pos
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            id: poprt
+            orientation: "vertical"
+            padding: (dp(40), dp(40)) if Window.size > (240, 320) else (dp(20), dp(40))
+            spacing: dp(40)
 
+            GridLayout:
+                spacing: (dp(30), dp(40)) if Window.size > (240, 320) else (dp(10), dp(40))
+                cols: 2
+                Label:
+                    font_size: "16dp"
+                    font_name: "fonts/Nunito-Regular.ttf"
+                    text: "Theme"
+                    size_hint_y: None
+                    height: dp(40)
+                DarkModeDDMainButton:
+                    id: darkmodedd_main_button
+                    size_hint_y: None
+                    height: dp(40)
+                    on_release:
+                        self.children[1].source = "images/chevron-down.png"
+                        Factory.DarkModeDD().open(self)
+
+
+<DarkModeDDMainButton>:
+    canvas.before:
+        Color:
+            rgb: C("#3B3B3B")
+        RoundedRectangle:
+            radius: [dp(15)]
+            size: self.size
+            pos: self.pos
+        Rectangle:
+            size: self.size[0], self.size[1]/2
+            pos:self.pos
+    Image:
+        source: "images/chevron-left.png"
+        pos: root.pos[0] + root.width - self.width, root.pos[1] + root.height/2 - self.height/2
+        size_hint: None, None
+        size: dp(24), dp(24)
+    Label:
+        text: app.setting_mode
+        font_size: "16dp"
+        font_name: "fonts/Nunito-Regular.ttf"
+        pos: root.pos
+        halign: "center"
+        valign: "bottom"
+        text_size: None, None
+        width: root.width
+        height: root.height
+
+
+<DarkModeDDOptions@Button>:
+    canvas.before:
+        Color:
+            rgb: C("#3B3B3B")
+        Rectangle:
+            size: root.size
+            pos: root.pos
+    text: root.text
+    font_size: "16dp"
+    font_name: "fonts/Nunito-Regular.ttf"
+    background_color: 0, 0, 0, 0
+
+
+<DarkModeDD>:
+    DarkModeDDOptions:
+        text: "Dark"
+        size_hint_y: None
+        height: dp(40)
+        on_release:
+            root.select([C("#252525"), [1, 1, 1], C("#9A9A9A")])
+            app.setting_mode = "Dark"
+    DarkModeDDOptions:
+        text: "Light"
+        size_hint_y: None
+        height: dp(40)
+        on_release:
+            root.select([C("#ebebeb"), [0, 0, 0], C("#252525")])
+            app.setting_mode = "Light"
+
+
+
+
+        # Main screen
 
 <Main>:
     id: main_page
@@ -203,7 +288,9 @@
 
                 app.root.current = "note_editor"
                 app.root.children[0].ids.title_input.text = ""
+                app.root.children[0].ids.title_input.disabled = False
                 app.root.children[0].ids.body_input.text = ""
+                app.root.children[0].ids.body_input.disabled = False
 
 
 <GoBackButton>:
@@ -246,14 +333,14 @@
 
 <TitleInput>:
     hint_text: "Title"
-    hint_text_color: C("#9A9A9A")
+    hint_text_color: app.color_text_hint
     font_size: "35dp"
     #size_hint: 1, None
     #height: self.minimum_height
     font_name: "fonts/Nunito-Regular.ttf"
     write_tab: False
     background_color: 0, 0, 0, 0
-    foreground_color: 1, 1, 1
+    foreground_color: app.color_text
     disabled_foreground_color: C("#9A9A9A")
     cursor_color: 1, 1, 1
 
@@ -261,11 +348,11 @@
     font_size: "15dp"
     font_name: "fonts/Nunito-Regular.ttf"
     hint_text: 'Type something...'
-    hint_text_color: C("#9A9A9A")
+    hint_text_color: app.color_text_hint
     #size_hint_y: None
     #height: self.minimum_height
     background_color: 0, 0, 0, 0
-    foreground_color: 1, 1, 1
+    foreground_color: app.color_text
     disabled_foreground_color: C("#9A9A9A")
     cursor_color: 1, 1, 1
 
@@ -410,6 +497,9 @@
     font_size: "18dp"
 
 
+
+        # Note editor screen
+
 <NoteEditor>:
     BoxLayout:
         id: wrap_box_editor
@@ -427,8 +517,8 @@
                     size: dp(48), dp(48)
                     pos: dp(20) - dp(11), toolbar_editor.pos[1] + toolbar_editor.padding[3] - dp(2)
                     on_release:
-                        Factory.DiscardPopup().open()
-                        #app.root.current = "main"
+                        self.check_inputs(title_input, body_input, Factory.DiscardPopup())
+
 
                 ViewModeButton:
                     source: "images/eye-outline.png"
