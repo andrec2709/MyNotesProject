@@ -58,7 +58,6 @@ class DiscardPopup(ModalView):
 
 
 class SavePopup(ModalView):
-
     def save_note(self, title, body, r=0.6196, g=1, b=1, a=1):
         """
         Adds note to the database, and updates the 'notes' attribute from StorageNotes class (update_notes()), which
@@ -73,16 +72,19 @@ class SavePopup(ModalView):
             all_ids_db.append(rowid[0])
 
         if note_id not in all_ids_db:
-            print(sqlite3.sqlite_version)
             cur.execute("INSERT INTO notes VALUES ('{}','{}',{},{},{},{});".format(title, body, r, g, b, a))
 
         else:
             cur.execute("UPDATE notes SET TITLE = '{}', BODY = '{}', R = {}, G = {}, B = {}, A = {} WHERE ROWID = {};"
                         .format(title, body, r, g, b, a, note_id))
-
+        # TODO: Issue: cur.lastrowid returning 0, needs fix
         app = App.get_running_app()
+        print(cur.lastrowid)
         app.root.children[0].ids.title_input.note_id_num = cur.lastrowid
+        #app.root.children[0].ids.go_back_button.note_id_num = cur.lastrowid
+
         app.root.children[0].ids.save_button.disabled = False
+        cur.close()
         con.commit()
         con.close()
 
@@ -95,7 +97,6 @@ class DiscardButton(Button):
 
 class KeepButton(Button):
     pass
-
 
 class AddButton(ButtonBehavior, Image):
     def collide_point(self, x, y):
@@ -147,12 +148,17 @@ class SettingsButton(ButtonBehavior, Image):
 
 
 class GoBackButton(ButtonBehavior, Image):
-    def check_inputs(self, title, body, popup):
-        app = App.get_running_app()
-        if title.text != "":
-            popup.open()
-        else:
-            app.root.current = "main"
+    #title_opened = StringProperty("")
+    #body_opened = StringProperty("")
+    #note_id_num = NumericProperty(0)
+
+    #def check_inputs(self, title, body, popup):
+       # app = App.get_running_app()
+       # if title.text != self.title_opened or body.text != self.body_opened:
+           # popup.open()
+        #else:
+          #  app.root.current = "main"
+  pass
 
 
 class SaveButton(ButtonBehavior, Image):
@@ -162,6 +168,8 @@ class SaveButton(ButtonBehavior, Image):
 
 
 class ViewModeButton(ButtonBehavior, Image):
+    """TODO: Call a popup that allows the user to change the note's background color. May change class name aswell.
+    """
     pass
 
 
@@ -201,12 +209,13 @@ class SearchInput(TextInput):
         """
         Every time you type in something, it changes the RecycleView data.
         """
-        self.app.root.children[0].ids.rv.data = []
+        self.app.root.children[0].ids.rv.data_model.data = []
         for note in self.app.root.children[0].ids.rv.data_model.notes:
             if self.text.lower() in note[1].lower():
                 self.app.root.children[0].ids.rv.data.append({
 
                     'text': note[1][:100] if len(note[1]) > 100 else note[1],
+                    'full_title': note[1],
                     'size_hint_y': None,
                     'height': dp(90) if len(note[1]) < 100 else dp(120),
                     'id_num': note[0],  # rowid
@@ -256,6 +265,7 @@ class NotesLabel(RecycleDataViewBehavior, ButtonBehavior, Label):
                                 ])
     bg_color = ColorProperty()
     go_to_editor = BooleanProperty(True)
+    full_title = StringProperty("")
 
     def __init__(self, **kwargs):
         super(NotesLabel, self).__init__(**kwargs)
@@ -285,6 +295,7 @@ class NotesLabel(RecycleDataViewBehavior, ButtonBehavior, Label):
         con = sqlite3.connect("example.db")
         cur = con.cursor()
         cur.execute("DELETE FROM notes WHERE ROWID = {};".format(self.id_num))
+        cur.close()
         con.commit()
         con.close()
         self.remove_widget(self.remove_note)
@@ -311,10 +322,14 @@ class NotesLabel(RecycleDataViewBehavior, ButtonBehavior, Label):
     def on_release(self):
         if self.go_to_editor:
             self.app.root.current = "note_editor"
-            self.app.root.children[0].ids.title_input.text = self.text
+            self.app.root.children[0].ids.title_input.text = self.full_title
             self.app.root.children[0].ids.body_input.text = self.body_txt
             self.app.root.children[0].ids.title_input.note_id_num = self.id_num
-            #print(self.id_num)
+
+           # self.app.root.children[0].ids.go_back_button.title_opened = self.full_title
+            #self.app.root.children[0].ids.go_back_button.body_opened = self.body_txt
+            #self.app.root.children[0].ids.go_back_button.note_id_num = self.id_num
+            print(self.id_num)
 
 
 class RemoveNote(ButtonBehavior, Widget):
@@ -336,12 +351,14 @@ class StorageNotes(RecycleDataModel):
             self.notes.append(note)
 
         self.data = [{'text': note[1][:100] if len(note[1]) > 100 else note[1],
+                      'full_title': note[1],
                       'size_hint_y': None,
                       'height': dp(90) if len(note[1]) < 100 else dp(120),
                       'id_num': note[0],  # rowid
                       'body_txt': note[2],
                       'bg_color': [note[3], note[4], note[5], note[6]]
                       } for note in self.notes]
+        self.cur.close()
         self.con.close()
 
     def update_notes(self):
@@ -354,12 +371,14 @@ class StorageNotes(RecycleDataModel):
             self.notes.append(note)
 
         self.data = [{'text': note[1][:100] if len(note[1]) > 100 else note[1],
+                      'full_title': note[1],
                       'size_hint_y': None,
                       'height': dp(90) if len(note[1]) < 100 else dp(120),
                       'id_num': note[0],  # rowid
                       'body_txt': note[2],
                       'bg_color': [note[3], note[4], note[5], note[6]]
                       } for note in self.notes]
+        cur.close()
         con.close()
 
 

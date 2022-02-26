@@ -304,6 +304,10 @@
                 app.root.children[0].ids.body_input.text = ""
                 app.root.children[0].ids.body_input.disabled = False
 
+                #app.root.children[0].ids.go_back_button.title_opened = ""
+                #app.root.children[0].ids.go_back_button.body_opened = ""
+                #app.root.children[0].ids.go_back_button.note_id_num = 0
+
 
 <GoBackButton>:
     canvas.before:
@@ -527,6 +531,7 @@
             padding: 0, 0, 0, dp(10)
             FloatLayout:
                 GoBackButton:
+                    id: go_back_button
                     source: "images/chevron-left.png"
                     size_hint: None, None
                     size: dp(48), dp(48)
@@ -562,7 +567,7 @@
             orientation: "vertical"
             TitleInput:
                 id: title_input
-                on_focus: print(self.note_id_num)
+                #on_focus: print(self.note_id_num)
             BodyTextInput:
                 id: body_input
                 size_hint_y: 1.8
