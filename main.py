@@ -74,15 +74,18 @@ class SavePopup(ModalView):
 
         if note_id not in all_ids_db:
             print(sqlite3.sqlite_version)
-            x = cur.execute("INSERT INTO notes VALUES ('{}','{}',{},{},{},{}) returning rowid;".format(title, body, r, g, b, a))
-            print(x)
+            cur.execute("INSERT INTO notes VALUES ('{}','{}',{},{},{},{});".format(title, body, r, g, b, a))
+
         else:
             cur.execute("UPDATE notes SET TITLE = '{}', BODY = '{}', R = {}, G = {}, B = {}, A = {} WHERE ROWID = {};"
                         .format(title, body, r, g, b, a, note_id))
 
+        app = App.get_running_app()
+        app.root.children[0].ids.title_input.note_id_num = cur.lastrowid
+        app.root.children[0].ids.save_button.disabled = False
         con.commit()
         con.close()
-        app = App.get_running_app()
+
         app.root.get_screen("main").ids.rv.data_model.update_notes()
 
 
