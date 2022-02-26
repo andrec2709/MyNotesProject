@@ -1,4 +1,5 @@
 import sqlite3
+from time import time
 from random import randint
 from kivy.animation import Animation
 from kivy.app import App
@@ -6,7 +7,7 @@ from kivy.base import EventLoop
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.metrics import dp
-from kivy.properties import ListProperty, ColorProperty, DictProperty, StringProperty
+from kivy.properties import ListProperty, ColorProperty, DictProperty, StringProperty, NumericProperty, BooleanProperty
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -57,7 +58,32 @@ class DiscardPopup(ModalView):
 
 
 class SavePopup(ModalView):
-    pass
+
+    def save_note(self, title, body, r=0.6196, g=1, b=1, a=1):
+        """
+        Adds note to the database, and updates the 'notes' attribute from StorageNotes class (update_notes()), which
+        updates data for the RecycleView.
+        """
+        note_id = App.get_running_app().root.children[0].ids.title_input.note_id_num
+        con = sqlite3.connect("example.db")
+        cur = con.cursor()
+        all_ids_db = []
+
+        for rowid in cur.execute("SELECT ROWID FROM notes"):  # Getting all ids from table 'notes'
+            all_ids_db.append(rowid[0])
+
+        if note_id not in all_ids_db:
+            print(sqlite3.sqlite_version)
+            x = cur.execute("INSERT INTO notes VALUES ('{}','{}',{},{},{},{}) returning rowid;".format(title, body, r, g, b, a))
+            print(x)
+        else:
+            cur.execute("UPDATE notes SET TITLE = '{}', BODY = '{}', R = {}, G = {}, B = {}, A = {} WHERE ROWID = {};"
+                        .format(title, body, r, g, b, a, note_id))
+
+        con.commit()
+        con.close()
+        app = App.get_running_app()
+        app.root.get_screen("main").ids.rv.data_model.update_notes()
 
 
 class DiscardButton(Button):
@@ -127,7 +153,9 @@ class GoBackButton(ButtonBehavior, Image):
 
 
 class SaveButton(ButtonBehavior, Image):
-    pass
+    """
+    Saves the changes/new note.
+    """
 
 
 class ViewModeButton(ButtonBehavior, Image):
@@ -186,7 +214,7 @@ class SearchInput(TextInput):
 
 
 class TitleInput(TextInput):
-    pass
+    note_id_num = NumericProperty(0)
 
 
 class BodyTextInput(TextInput):
@@ -224,10 +252,70 @@ class NotesLabel(RecycleDataViewBehavior, ButtonBehavior, Label):
                                 {'color': [255/255, 245/255, 153/255], 'font_color': [0, 0, 0]},
                                 ])
     bg_color = ColorProperty()
+    go_to_editor = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         super(NotesLabel, self).__init__(**kwargs)
         self.bg_color = self.colors_list[randint(0, len(self.colors_list)-1)]['color']
+        self.remove_note = RemoveNote(size=self.size, pos=self.pos, on_release=self.remove)
+        self.app = App.get_running_app()
+
+    __events__ = ("on_long_press",)
+    long_press_time = NumericProperty(.6)
+
+    def collide_point(self, x, y):
+        """
+        Checks for collide point, if outside it removes the 'remove_note' widget.
+        TODO: Needs to fix bug: Clicking outside only works if it's inside the RecycleView.
+        """
+        if self.pos[0] <= x <= self.pos[0] + self.width and self.pos[1] <= y <= self.pos[1] + self.height:
+            return True
+        else:
+            self.remove_widget(self.remove_note)
+            self.go_to_editor = True
+            return False
+
+    def remove(self, instance):
+        """
+        Removes the widget from database and updates the screen calling StorageNotes.update_notes()
+        """
+        con = sqlite3.connect("example.db")
+        cur = con.cursor()
+        cur.execute("DELETE FROM notes WHERE ROWID = {};".format(self.id_num))
+        con.commit()
+        con.close()
+        self.remove_widget(self.remove_note)
+        App.get_running_app().root.children[0].ids.rv.data_model.update_notes()
+
+
+    def on_state(self, instance, value):
+        if value == "down":
+            lpt = self.long_press_time
+            self._clockev = Clock.schedule_once(self.do_long_press, lpt)
+        else:
+            self._clockev.cancel()
+
+    def do_long_press(self, dt):
+        self.dispatch('on_long_press')
+
+    def on_long_press(self, *largs):
+        self.remove_note.size = self.size
+        self.remove_note.pos = self.pos
+        self.add_widget(self.remove_note)
+        self.go_to_editor = False
+        print('long press!')
+
+    def on_release(self):
+        if self.go_to_editor:
+            self.app.root.current = "note_editor"
+            self.app.root.children[0].ids.title_input.text = self.text
+            self.app.root.children[0].ids.body_input.text = self.body_txt
+            self.app.root.children[0].ids.title_input.note_id_num = self.id_num
+            #print(self.id_num)
+
+
+class RemoveNote(ButtonBehavior, Widget):
+    pass
 
 
 class StorageNotes(RecycleDataModel):
@@ -252,6 +340,24 @@ class StorageNotes(RecycleDataModel):
                       'bg_color': [note[3], note[4], note[5], note[6]]
                       } for note in self.notes]
         self.con.close()
+
+    def update_notes(self):
+        self.notes.clear()
+
+        con = sqlite3.connect("example.db")
+        cur = con.cursor()
+
+        for note in cur.execute("SELECT ROWID, * FROM notes"):
+            self.notes.append(note)
+
+        self.data = [{'text': note[1][:100] if len(note[1]) > 100 else note[1],
+                      'size_hint_y': None,
+                      'height': dp(90) if len(note[1]) < 100 else dp(120),
+                      'id_num': note[0],  # rowid
+                      'body_txt': note[2],
+                      'bg_color': [note[3], note[4], note[5], note[6]]
+                      } for note in self.notes]
+        con.close()
 
 
 class RV(RecycleView):

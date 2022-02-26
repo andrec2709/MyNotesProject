@@ -67,6 +67,18 @@
         padding: dp(20), dp(6), dp(6), dp(6)
 
 
+<RemoveNote>:
+    canvas.before:
+        Color:
+            rgb: 1, 0, 0
+        RoundedRectangle:
+            size: root.size
+            pos: root.pos
+    Image:
+        pos: root.pos[0] + root.width/2 - self.width/2, root.pos[1] + root.height/2 - self.height/2
+        size: dp(48), dp(48)
+        source: "images/delete.png"
+
 
 
 <NotesLabel>:
@@ -84,6 +96,7 @@
     #valign: "top"
     #height: self.texture_size[1]
     padding: dp(20), dp(30)
+
     on_release:
         app.root.children[0].ids.close_button.close_search_bar(
         app.root.children[0].ids.search_button,
@@ -94,14 +107,10 @@
         app.root.children[0].ids.search_bar
         )   # Before it changes to the screen note_editor, it closes the search bar
 
-
-
-
-
         # Changing screen
-        app.root.current = "note_editor"
-        app.root.children[0].ids.title_input.text = root.text
-        app.root.children[0].ids.body_input.text = root.body_txt
+        #app.root.current = "note_editor"
+        #app.root.children[0].ids.title_input.text = root.text
+        #app.root.children[0].ids.body_input.text = root.body_txt
 
 
 <SettingsPopup>:
@@ -289,6 +298,9 @@
                 app.root.current = "note_editor"
                 app.root.children[0].ids.title_input.text = ""
                 app.root.children[0].ids.title_input.disabled = False
+
+                app.root.children[0].ids.title_input.note_id_num = 0 # Always start new note with id 0
+
                 app.root.children[0].ids.body_input.text = ""
                 app.root.children[0].ids.body_input.disabled = False
 
@@ -456,6 +468,9 @@
                 KeepButton:
                     text: "Save"
                     on_release:
+                        root.save_note(app.root.children[0].ids.title_input.text,
+                        app.root.children[0].ids.body_input.text)
+                        app.root.children[0].ids.save_button.disabled = True
                         root.dismiss()
     FloatLayout:
         Image:
@@ -526,6 +541,7 @@
                     size: dp(24), dp(24)
                     #pos: toolbar_editor.size[0] - self.size[0]*2 + wrap_box_editor.padding[0] - dp(10), toolbar_editor.pos[1] + toolbar_editor.padding[3] + dp(10)
                     pos: toolbar_editor.size[0] - self.size[0]*2 - dp(40) + wrap_box_editor.padding[0], toolbar_editor.pos[1] + toolbar_editor.padding[3] + dp(10)
+
                     on_release:
                         title_input.disabled = True if title_input.disabled == False else False
                         body_input.disabled = True if body_input.disabled == False else False
@@ -546,6 +562,7 @@
             orientation: "vertical"
             TitleInput:
                 id: title_input
+                on_focus: print(self.note_id_num)
             BodyTextInput:
                 id: body_input
                 size_hint_y: 1.8
